@@ -25,6 +25,46 @@ class TaskProvider extends ChangeNotifier {
   TaskFilter get statusFilter => _statusFilter;
   Priority? get priorityFilter => _priorityFilter;
 
+  int get totalTasks => _tasks.length;
+  int get completedTasks => _tasks.where((t) => t.isCompleted).length;
+  int get incompleteTasks => _tasks.where((t) => !t.isCompleted).length;
+  double get completionRate =>
+      _tasks.isEmpty ? 0 : completedTasks / _tasks.length;
+
+  int get highPriorityCount =>
+      _tasks.where((t) => t.priority == Priority.high).length;
+  int get mediumPriorityCount =>
+      _tasks.where((t) => t.priority == Priority.medium).length;
+  int get lowPriorityCount =>
+      _tasks.where((t) => t.priority == Priority.low).length;
+
+  int get overdueCount {
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    return _tasks
+        .where((t) => !t.isCompleted && t.dueDate.isBefore(today))
+        .length;
+  }
+
+  int get dueTodayCount {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return _tasks
+        .where(
+          (t) =>
+              !t.isCompleted &&
+              DateTime(
+                t.dueDate.year,
+                t.dueDate.month,
+                t.dueDate.day,
+              ).isAtSameMomentAs(today),
+        )
+        .length;
+  }
+
   List<Task> get _filteredAndSortedTasks {
     List<Task> result = List.from(_tasks);
 
@@ -61,7 +101,11 @@ class TaskProvider extends ChangeNotifier {
     };
 
     for (final task in tasks) {
-      final due = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+      final due = DateTime(
+        task.dueDate.year,
+        task.dueDate.month,
+        task.dueDate.day,
+      );
       if (due.isAtSameMomentAs(today)) {
         grouped['Today']!.add(task);
       } else if (due.isAtSameMomentAs(tomorrow)) {
@@ -76,6 +120,22 @@ class TaskProvider extends ChangeNotifier {
     // Remove empty sections
     grouped.removeWhere((key, value) => value.isEmpty);
     return grouped;
+  }
+
+  List<Map<String, dynamic>> get last7DaysActivity {
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: 6 - i));
+      final count = _tasks.where((t) {
+        final due = DateTime(t.dueDate.year, t.dueDate.month, t.dueDate.day);
+        return t.isCompleted && due.isAtSameMomentAs(day);
+      }).length;
+      return {'date': day, 'count': count};
+    });
   }
 
   void setStatusFilter(TaskFilter filter) {
@@ -123,11 +183,11 @@ class TaskProvider extends ChangeNotifier {
         .where('userId', isEqualTo: userId)
         .snapshots()
         .map((snapshot) {
-      _tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
-      _saveToCache(userId);
-      notifyListeners();
-      return _tasks;
-    });
+          _tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
+          _saveToCache(userId);
+          notifyListeners();
+          return _tasks;
+        });
   }
 
   Future<bool> addTask({
@@ -200,7 +260,9 @@ class TaskProvider extends ChangeNotifier {
   Future<void> _saveToCache(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final tasksJson = _tasks.map((t) => t.toFirestore()..['id'] = t.id).toList();
+      final tasksJson = _tasks
+          .map((t) => t.toFirestore()..['id'] = t.id)
+          .toList();
       await prefs.setString('tasks_$userId', jsonEncode(tasksJson));
     } catch (_) {}
   }
@@ -220,11 +282,12 @@ class TaskProvider extends ChangeNotifier {
             title: map['title'] ?? '',
             description: map['description'] ?? '',
             dueDate: DateTime.parse(
-                (map['dueDate'] as Map)['_seconds'] != null
-                    ? DateTime.fromMillisecondsSinceEpoch(
-                            ((map['dueDate'] as Map)['_seconds'] as int) * 1000)
-                        .toIso8601String()
-                    : map['dueDate'].toString()),
+              (map['dueDate'] as Map)['_seconds'] != null
+                  ? DateTime.fromMillisecondsSinceEpoch(
+                      ((map['dueDate'] as Map)['_seconds'] as int) * 1000,
+                    ).toIso8601String()
+                  : map['dueDate'].toString(),
+            ),
             priority: Priority.values.firstWhere(
               (p) => p.name == map['priority'],
               orElse: () => Priority.low,
