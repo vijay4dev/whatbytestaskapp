@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "22170743547",
+    "project_id": "whatbytetaskapp",
+    "storage_bucket": "whatbytetaskapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:22170743547:android:706c8ec385aba83189f65e",
+        "android_client_info": {
+          "package_name": "com.example.whatbytestaskapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSehVok7P6IcTPAbOi_YksRRJqPktGUj8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
