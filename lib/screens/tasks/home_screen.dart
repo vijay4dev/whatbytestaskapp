@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:whatbytestaskapp/screens/tasks/statistics_screen.dart';
 import '../../models/task_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/task_provider.dart';
@@ -352,9 +353,12 @@ class _BottomBar extends StatelessWidget {
           ),
           const SizedBox(width: 60), // FAB space
           IconButton(
-            icon: const Icon(Icons.calendar_month_outlined),
+            icon: const Icon(Icons.bar_chart_rounded),
             color: AppColors.textHint,
-            onPressed: () {},
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const StatisticsScreen()),)
           ),
         ],
       ),
